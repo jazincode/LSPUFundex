@@ -14,9 +14,6 @@ $totalExpenses = $conn->query(
     "SELECT COALESCE(SUM(amount),0) AS total FROM expenses"
 )->fetch_assoc()['total'];
 
-$totalBalance  = $totalFunds - $totalExpenses;
-$totalSections = countAll($conn, 'sections');
-$totalDepts    = countAll($conn, 'departments');
 
 $topSections = $conn->query(
     "SELECT s.name AS section_name, d.code AS dept_code,
@@ -53,53 +50,11 @@ require_once '../includes/header.php';
 <div class="page-header">
     <div>
         <h1><i class="bi bi-speedometer2 me-2"></i>Public Dashboard</h1>
-        <p>Live financial overview — <?php echo clean(SCHOOL_NAME); ?></p>
+        <p>Live financial overview</p>
     </div>
     <span class="text-muted small">
         <i class="bi bi-clock me-1"></i>Updated: <?php echo date('F d, Y h:i A'); ?>
     </span>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon blue"><i class="bi bi-cash-stack"></i></div>
-            <div>
-                <div class="stat-value"><?php echo formatMoney($totalFunds); ?></div>
-                <div class="stat-label">Total Funds Collected</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon red"><i class="bi bi-receipt-cutoff"></i></div>
-            <div>
-                <div class="stat-value"><?php echo formatMoney($totalExpenses); ?></div>
-                <div class="stat-label">Total Expenses</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon green"><i class="bi bi-wallet2"></i></div>
-            <div>
-                <div class="stat-value"
-                     style="color:<?php echo $totalBalance >= 0 ? '#27ae60' : '#e74c3c'; ?>">
-                    <?php echo formatMoney($totalBalance); ?>
-                </div>
-                <div class="stat-label">Total Balance Remaining</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon orange"><i class="bi bi-grid"></i></div>
-            <div>
-                <div class="stat-value"><?php echo $totalSections; ?></div>
-                <div class="stat-label">Active Sections (<?php echo $totalDepts; ?> Depts)</div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="row g-4 mb-4">

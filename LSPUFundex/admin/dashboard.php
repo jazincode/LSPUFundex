@@ -63,53 +63,7 @@ require_once '../includes/header.php';
     </span>
 </div>
 
-<?php showFlash(); ?>
 
-<!-- Stat Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon blue"><i class="bi bi-cash-stack"></i></div>
-            <div>
-                <div class="stat-value"><?php echo formatMoney($totalFunds); ?></div>
-                <div class="stat-label">Total Funds Collected</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon red"><i class="bi bi-receipt-cutoff"></i></div>
-            <div>
-                <div class="stat-value"><?php echo formatMoney($totalExpenses); ?></div>
-                <div class="stat-label">Total Expenses</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon green"><i class="bi bi-wallet2"></i></div>
-            <div>
-                <div class="stat-value"
-                     style="color:<?php echo $totalBalance >= 0 ? '#27ae60':'#e74c3c'; ?>">
-                    <?php echo formatMoney($totalBalance); ?>
-                </div>
-                <div class="stat-label">System Balance</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card">
-            <div class="stat-icon orange"><i class="bi bi-people"></i></div>
-            <div>
-                <div class="stat-value"><?php echo $totalUsers; ?></div>
-                <div class="stat-label">
-                    Users (<?php echo $totalSections; ?> sections,
-                    <?php echo $totalDepts; ?> depts)
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Charts -->
 <div class="row g-4 mb-4">

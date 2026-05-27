@@ -60,20 +60,27 @@ $activePage = $activePage ?? '';
 <nav class="navbar navbar-expand-lg lspu-navbar fixed-top">
     <div class="container-fluid px-4">
 
-        <!-- Brand / Logo -->
+       <!-- Brand / Logo -->
         <a class="navbar-brand d-flex align-items-center gap-2" href="<?php echo BASE_URL; ?>">
-            <div class="brand-icon">
-                <i class="bi bi-bank2"></i>
-            </div>
-            <div>
-                <span class="brand-name">LSPUFundex</span>
-                <span class="brand-tagline d-none d-md-block">Financial Transparency System</span>
-            </div>
+
+        <!-- Logo Image -->
+           <img src="<?php echo BASE_URL; ?>assets/images/logo.png"
+            alt="LSPUFundex Logo"
+            class="brand-logo">
+
+        <div>
+            <span class="brand-name">LSPUFundex</span>
+            <span class="brand-tagline d-none d-md-block">
+            Financial Transparency System
+            </span>
+        </div>
         </a>
 
-        <!-- Mobile Toggle -->
-        <button class="navbar-toggler" type="button" id="sidebarToggle">
-            <i class="bi bi-list text-white fs-4"></i>
+        <!-- Sidebar Toggle — custom JS handles this, NOT Bootstrap collapse -->
+        <button type="button" id="sidebarToggle"
+                class="btn btn-link text-white p-1 border-0 ms-2"
+                aria-label="Toggle sidebar">
+            <i class="bi bi-list fs-4"></i>
         </button>
 
         <!-- Right Side Nav -->
@@ -125,6 +132,7 @@ $activePage = $activePage ?? '';
         <div class="sidebar-inner">
 
             <!-- Public Navigation (visible to everyone) -->
+
             <div class="sidebar-section">
                 <span class="sidebar-label">PUBLIC</span>
                 <a href="<?php echo BASE_URL; ?>public/dashboard.php"
@@ -169,6 +177,37 @@ $activePage = $activePage ?? '';
                 <span>My Profile</span>
                 </a>
             </div>
+            <?php endif; ?>
+
+           <?php if (isLoggedIn() && isCouncil()): ?>
+            <div class="sidebar-section">
+                <span class="sidebar-label">COUNCIL</span>
+                <a href="<?php echo BASE_URL; ?>council/dashboard.php"
+                class="sidebar-link <?php echo $activePage === 'council_dash' ? 'active' : ''; ?>">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+             <a href="<?php echo BASE_URL; ?>council/funds.php"
+             class="sidebar-link <?php echo $activePage === 'council_funds' ? 'active' : ''; ?>">
+              <i class="bi bi-cash-stack"></i>
+              <span>Council Funds</span>
+             </a>
+            <a href="<?php echo BASE_URL; ?>council/expenses.php"
+              class="sidebar-link <?php echo $activePage === 'council_expenses' ? 'active' : ''; ?>">
+            <i class="bi bi-receipt"></i>
+                 <span>Council Expenses</span>
+            </a>
+             <a href="<?php echo BASE_URL; ?>council/sections.php"
+               class="sidebar-link <?php echo $activePage === 'council_sections' ? 'active' : ''; ?>">
+               <i class="bi bi-grid"></i>
+        <span>Section Overview</span>
+             </a>
+            <a href="<?php echo BASE_URL; ?>council/rankings.php"
+                 class="sidebar-link <?php echo $activePage === 'council_rankings' ? 'active' : ''; ?>">
+                  <i class="bi bi-trophy"></i>
+                   <span>Rankings</span>
+                   </a>
+                 </div>
             <?php endif; ?>
 
             <?php if (isLoggedIn() && isAdmin()): ?>

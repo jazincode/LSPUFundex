@@ -82,7 +82,7 @@ $balance       = $totalFunds - $totalExpenses;
 </button>
 
 <div class="header">
-    <h1>LSPUFundex — Financial Report</h1>
+    <h1>LSPUFundex Financial Report</h1>
     <h2><?php echo clean(SCHOOL_NAME); ?></h2>
     <p>Generated: <?php echo date('F d, Y h:i A'); ?></p>
 </div>

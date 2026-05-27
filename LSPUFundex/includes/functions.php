@@ -62,6 +62,17 @@ function isOfficer() {
     return isset($_SESSION['role']) && $_SESSION['role'] === 'officer';
 }
 
+function isCouncil() {
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'council';
+}
+
+function requireCouncil() {
+    requireLogin();
+    if (!isCouncil() && !isAdmin()) {
+        redirect('../login.php');
+    }
+}
+
 /**
  * Require login — redirect to login page if not logged in.
  * Use this at the top of any protected page.
@@ -179,6 +190,39 @@ function getTotalExpenses($conn, $sectionId) {
  */
 function getBalance($conn, $sectionId) {
     return getTotalFunds($conn, $sectionId) - getTotalExpenses($conn, $sectionId);
+}
+
+/**
+ * Get total council funds for a department.
+ */
+function getCouncilFunds($conn, $departmentId) {
+    $stmt = $conn->prepare(
+        "SELECT COALESCE(SUM(amount), 0) as total
+         FROM council_funds WHERE department_id = ?"
+    );
+    $stmt->bind_param("i", $departmentId);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc()['total'];
+}
+
+/**
+ * Get total council expenses for a department.
+ */
+function getCouncilExpenses($conn, $departmentId) {
+    $stmt = $conn->prepare(
+        "SELECT COALESCE(SUM(amount), 0) as total
+         FROM council_expenses WHERE department_id = ?"
+    );
+    $stmt->bind_param("i", $departmentId);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc()['total'];
+}
+
+/**
+ * Get council balance for a department.
+ */
+function getCouncilBalance($conn, $departmentId) {
+    return getCouncilFunds($conn, $departmentId) - getCouncilExpenses($conn, $departmentId);
 }
 
 // ============================================

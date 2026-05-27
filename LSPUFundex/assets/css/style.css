@@ -138,6 +138,7 @@ body {
 
 .sidebar-link i { font-size: 16px; min-width: 18px; }
 
+
 /* ============================================
    MAIN CONTENT
    ============================================ */
@@ -227,6 +228,12 @@ body {
 .page-header p {
     font-size: 13px; color: var(--text-muted);
     margin: 0;
+}
+
+.brand-logo{
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
 }
 
 /* ============================================
@@ -336,17 +343,101 @@ body {
 /* ============================================
    RESPONSIVE — Mobile Sidebar
    ============================================ */
+/* ============================================
+   SIDEBAR ANIMATION — DESKTOP COLLAPSE
+   ============================================ */
+.sidebar {
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sidebar.sidebar-collapsed-desktop {
+    transform: translateX(-260px) !important;
+}
+
+.main-content {
+    transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lspu-footer {
+    transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-content.sidebar-hidden {
+    margin-left: 0 !important;
+}
+
+.lspu-footer.sidebar-hidden {
+    margin-left: 0 !important;
+}
+
+/* ============================================
+   SIDEBAR ANIMATION — MOBILE
+   ============================================ */
 @media (max-width: 768px) {
     .sidebar {
-        transform: translateX(-100%);
+        transform: translateX(-260px);
     }
+
     .sidebar.show {
-        transform: translateX(0);
+        transform: translateX(0) !important;
+        box-shadow: 6px 0 24px rgba(0, 0, 0, 0.25);
     }
-    .main-content { margin-left: 0; }
-    .lspu-footer  { margin-left: 0; }
-    .content-inner { padding: 20px 15px; }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .lspu-footer {
+        margin-left: 0 !important;
+    }
+
+    .content-inner {
+        padding: 20px 15px;
+    }
 }
+
+@media (max-width: 480px) {
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .stat-value { font-size: 18px; }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .lspu-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .content-inner { padding: 15px 12px; }
+}
+
+@media (max-width: 576px) {
+    .modal-dialog { margin: 10px; }
+    .modal-body.p-4 { padding: 16px !important; }
+    .modal-footer { flex-direction: column; gap: 8px; }
+    .modal-footer .btn { width: 100%; }
+}
+
+@media (max-width: 360px) {
+    .brand-name { font-size: 15px; }
+    .brand-tagline { display: none !important; }
+}
+
+@media print {
+    .sidebar, .lspu-navbar, .lspu-footer,
+    .btn, form, .page-header button { display: none !important; }
+    .main-content { margin-left: 0 !important; }
+    .lspu-card { box-shadow: none; border: 1px solid #ddd; }
+}
+
 /* ============================================
    ALERT BOX (inline error inside pages)
    ============================================ */
@@ -548,4 +639,73 @@ tfoot td {
     .btn, form, .page-header button { display: none !important; }
     .main-content { margin-left: 0 !important; }
     .lspu-card { box-shadow: none; border: 1px solid #ddd; }
+}
+.role-badge.council {
+    background: #f5eef8;
+    color: #6c3483;
+}
+
+/* ============================================
+   SIDEBAR TOGGLE ANIMATION
+   ============================================ */
+
+/* Smooth transition already on .sidebar,
+   this adds the collapsed state for desktop */
+.sidebar {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Desktop — sidebar collapsed state */
+.sidebar.collapsed {
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+}
+
+/* Main content and footer expand when sidebar collapses */
+.main-content {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lspu-footer {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.main-content.sidebar-collapsed {
+    margin-left: 0;
+}
+
+.lspu-footer.sidebar-collapsed {
+    margin-left: 0;
+}
+
+/* Mobile overlay — darkens page when sidebar is open */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1039;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.show {
+    display: block;
+    opacity: 1;
+}
+
+/* Toggle button icon animation */
+#sidebarToggle {
+    transition: transform 0.2s ease;
+}
+
+#sidebarToggle:active {
+    transform: scale(0.85);
+}
+
+/* Sidebar slides in from left with shadow on mobile */
+@media (max-width: 768px) {
+    .sidebar.show {
+        transform: translateX(0);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    }
 }

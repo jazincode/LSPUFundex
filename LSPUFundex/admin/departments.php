@@ -264,16 +264,16 @@ require_once '../includes/header.php';
                             </button>
 
                             <!-- Delete Button -->
-                            <form method="POST" style="display:inline;">
-                                <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
-                                <input type="hidden" name="action" value="delete">
-                                <input type="hidden" name="id"     value="<?php echo $dept['id']; ?>">
-                                        data-confirm="Delete '<?php echo clean($dept['name']); ?>'? This cannot be undone."
-                                        title="Delete">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                                <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
-                            </form>
+                           <form method="POST" style="display:inline;">
+                           <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
+                           <input type="hidden" name="action" value="delete">
+                           <input type="hidden" name="id"     value="<?php echo $dept['id']; ?>">
+                           <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Delete <?php echo addslashes(clean($dept['name'])); ?>? This cannot be undone.')"
+                            title="Delete">
+                           <i class="bi bi-trash"></i>
+                           </button>
+                        </form>
                         </td>
                     </tr>
                     <?php endwhile; ?>

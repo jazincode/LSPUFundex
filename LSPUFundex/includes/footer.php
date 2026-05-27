@@ -22,15 +22,10 @@ if (!defined('LSPUFUNDEX')) {
 <footer class="lspu-footer">
     <div class="container-fluid px-4">
         <div class="row align-items-center">
-            <div class="col-md-6 text-center text-md-start">
+            <div class="col-12 text-center">
                 <span class="text-muted small">
-                    &copy; <?php echo date('Y'); ?> <strong>LSPUFundex</strong>
-                    — School Financial Transparency System
-                </span>
-            </div>
-            <div class="col-md-6 text-center text-md-end">
-                <span class="text-muted small">
-                    Laguna State Polytechnic University
+                    &copy; <?php echo date('Y'); ?> <strong>Laguna State Polytechnic University</strong>
+
                 </span>
             </div>
         </div>

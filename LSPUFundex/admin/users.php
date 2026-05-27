@@ -26,41 +26,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CREATE — Add new user
     // ----------------------------------------
     if ($action === 'create') {
-        $full_name  = trim($_POST['full_name']  ?? '');
-        $email      = trim($_POST['email']      ?? '');
-        $username   = trim($_POST['username']   ?? '');
-        $password   = $_POST['password']        ?? '';
-        $role       = $_POST['role']            ?? 'officer';
-        $section_id = ($role === 'officer')
-                      ? (int)($_POST['section_id'] ?? 0)
-                      : null;
+        $full_name     = trim($_POST['full_name']     ?? '');
+        $email         = trim($_POST['email']         ?? '');
+        $username      = trim($_POST['username']      ?? '');
+        $password      = $_POST['password']           ?? '';
+        $role          = $_POST['role']               ?? 'officer';
+        $section_id    = ($role === 'officer') ? (int)($_POST['section_id']    ?? 0) : null;
+        $department_id = ($role === 'council') ? (int)($_POST['department_id'] ?? 0) : null;
 
-        // Validation
         if (empty($full_name) || empty($email) || empty($username) || empty($password)) {
             $error = 'Full name, email, username, and password are required.';
-
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Please enter a valid email address.';
-
         } elseif (strlen($password) < 8) {
             $error = 'Password must be at least 8 characters long.';
-
         } elseif ($role === 'officer' && $section_id <= 0) {
             $error = 'Please assign a section to this officer.';
-
+        } elseif ($role === 'council' && $department_id <= 0) {
+            $error = 'Please assign a department to this council officer.';
         } else {
-            // Check duplicate username
-            $chkUser = $conn->prepare(
-                "SELECT id FROM users WHERE username = ?"
-            );
+            $chkUser = $conn->prepare("SELECT id FROM users WHERE username = ?");
             $chkUser->bind_param("s", $username);
             $chkUser->execute();
             $chkUser->store_result();
 
-            // Check duplicate email
-            $chkEmail = $conn->prepare(
-                "SELECT id FROM users WHERE email = ?"
-            );
+            $chkEmail = $conn->prepare("SELECT id FROM users WHERE email = ?");
             $chkEmail->bind_param("s", $email);
             $chkEmail->execute();
             $chkEmail->store_result();
@@ -74,13 +64,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $stmt = $conn->prepare(
                     "INSERT INTO users
-                        (full_name, email, username, password, role, section_id)
-                     VALUES (?, ?, ?, ?, ?, ?)"
+                        (full_name, email, username, password, role, section_id, department_id)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)"
                 );
                 $stmt->bind_param(
-                    "sssssi",
+                    "sssssii",
                     $full_name, $email, $username,
-                    $hashedPassword, $role, $section_id
+                    $hashedPassword, $role, $section_id, $department_id
                 );
 
                 if ($stmt->execute()) {
@@ -98,38 +88,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // UPDATE — Edit user details
     // ----------------------------------------
     if ($action === 'update') {
-        $id         = (int)($_POST['id']        ?? 0);
-        $full_name  = trim($_POST['full_name']  ?? '');
-        $email      = trim($_POST['email']      ?? '');
-        $username   = trim($_POST['username']   ?? '');
-        $role       = $_POST['role']            ?? 'officer';
-        $is_active  = isset($_POST['is_active']) ? 1 : 0;
-        $section_id = ($role === 'officer')
-                      ? (int)($_POST['section_id'] ?? 0)
-                      : null;
+        $id            = (int)($_POST['id']            ?? 0);
+        $full_name     = trim($_POST['full_name']      ?? '');
+        $email         = trim($_POST['email']          ?? '');
+        $username      = trim($_POST['username']       ?? '');
+        $role          = $_POST['role']                ?? 'officer';
+        $is_active     = isset($_POST['is_active'])    ? 1 : 0;
+        $section_id    = ($role === 'officer') ? (int)($_POST['section_id']    ?? 0) : null;
+        $department_id = ($role === 'council') ? (int)($_POST['department_id'] ?? 0) : null;
 
         if ($id <= 0 || empty($full_name) || empty($email) || empty($username)) {
             $error = 'All required fields must be filled.';
-
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Please enter a valid email address.';
-
         } elseif ($role === 'officer' && $section_id <= 0) {
             $error = 'Please assign a section to this officer.';
-
+        } elseif ($role === 'council' && $department_id <= 0) {
+            $error = 'Please assign a department to this council officer.';
         } else {
-            // Check duplicate username — exclude current user
-            $chkUser = $conn->prepare(
-                "SELECT id FROM users WHERE username = ? AND id != ?"
-            );
+            $chkUser = $conn->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
             $chkUser->bind_param("si", $username, $id);
             $chkUser->execute();
             $chkUser->store_result();
 
-            // Check duplicate email — exclude current user
-            $chkEmail = $conn->prepare(
-                "SELECT id FROM users WHERE email = ? AND id != ?"
-            );
+            $chkEmail = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
             $chkEmail->bind_param("si", $email, $id);
             $chkEmail->execute();
             $chkEmail->store_result();
@@ -139,28 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($chkEmail->num_rows > 0) {
                 $error = "Email '{$email}' is already registered.";
             } else {
+                // FIX: bind nullable ints via variables so MySQLi handles NULL correctly
                 $stmt = $conn->prepare(
                     "UPDATE users
                      SET full_name = ?, email = ?, username = ?,
-                         role = ?, section_id = ?, is_active = ?
+                         role = ?, section_id = ?, department_id = ?, is_active = ?
                      WHERE id = ?"
                 );
                 $stmt->bind_param(
-                    "ssssiiiiii",
+                    "ssssiiii",
                     $full_name, $email, $username,
-                    $role, $section_id, $is_active, $id
-                );
-
-                // Fix: correct bind types
-                $stmt = $conn->prepare(
-                    "UPDATE users
-                     SET full_name = ?, email = ?, username = ?,
-                         role = ?, section_id = ?, is_active = ?
-                     WHERE id = ?"
-                );
-                $stmt->bind_param("sssssii",
-                    $full_name, $email, $username,
-                    $role, $section_id, $is_active, $id
+                    $role, $section_id, $department_id, $is_active, $id
                 );
 
                 if ($stmt->execute()) {
@@ -168,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         "Updated user: {$full_name} (ID: {$id})");
                     setFlash('success', "User '{$full_name}' updated successfully!");
                 } else {
-                    setFlash('error', 'Failed to update user.');
+                    setFlash('error', 'Failed to update user. Error: ' . $stmt->error);
                 }
             }
         }
@@ -178,16 +149,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // RESET PASSWORD
     // ----------------------------------------
     if ($action === 'reset_password') {
-        $id          = (int)($_POST['id']           ?? 0);
-        $newPassword = $_POST['new_password']        ?? '';
+        $id          = (int)($_POST['id']      ?? 0);
+        $newPassword = $_POST['new_password']  ?? '';
 
         if ($id <= 0 || strlen($newPassword) < 8) {
             $error = 'Password must be at least 8 characters.';
         } else {
             $hashed = password_hash($newPassword, PASSWORD_BCRYPT);
-            $stmt   = $conn->prepare(
-                "UPDATE users SET password = ? WHERE id = ?"
-            );
+            $stmt   = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
             $stmt->bind_param("si", $hashed, $id);
 
             if ($stmt->execute()) {
@@ -206,7 +175,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
 
-        // Prevent deleting yourself
         if ($id === (int)$_SESSION['user_id']) {
             setFlash('error', 'You cannot delete your own account.');
         } elseif ($id <= 0) {
@@ -238,15 +206,17 @@ $users = $conn->query(
     "SELECT u.*,
             s.name  AS section_name,
             d.code  AS dept_code,
-            yl.name AS year_level_name
+            yl.name AS year_level_name,
+            dep.name AS department_name,
+            dep.code AS department_code
      FROM users u
-     LEFT JOIN sections    s  ON s.id  = u.section_id
-     LEFT JOIN departments d  ON d.id  = s.department_id
-     LEFT JOIN year_levels yl ON yl.id = s.year_level_id
+     LEFT JOIN sections    s   ON s.id   = u.section_id
+     LEFT JOIN departments d   ON d.id   = s.department_id
+     LEFT JOIN year_levels yl  ON yl.id  = s.year_level_id
+     LEFT JOIN departments dep ON dep.id = u.department_id
      ORDER BY u.role ASC, u.full_name ASC"
 );
 
-// All active sections for the dropdowns (grouped for display)
 $allSections = $conn->query(
     "SELECT s.id, s.name AS section_name, s.school_year,
             d.name AS dept_name, d.code AS dept_code,
@@ -259,6 +229,11 @@ $allSections = $conn->query(
 );
 $sectionList = $allSections->fetch_all(MYSQLI_ASSOC);
 
+$allDepts = $conn->query(
+    "SELECT id, name, code FROM departments WHERE is_active = 1 ORDER BY name ASC"
+);
+$deptList = $allDepts->fetch_all(MYSQLI_ASSOC);
+
 require_once '../includes/header.php';
 ?>
 
@@ -268,7 +243,7 @@ require_once '../includes/header.php';
 <div class="page-header">
     <div>
         <h1><i class="bi bi-people me-2"></i>User Management</h1>
-        <p>Manage admin and class officer accounts</p>
+        <p>Manage admin, officer, and council accounts</p>
     </div>
     <button class="btn btn-lspu" data-bs-toggle="modal" data-bs-target="#addModal">
         <i class="bi bi-person-plus me-2"></i>Add User
@@ -303,7 +278,7 @@ require_once '../includes/header.php';
                         <th>Username</th>
                         <th>Email</th>
                         <th>Role</th>
-                        <th>Assigned Section</th>
+                        <th>Assigned To</th>
                         <th>Last Login</th>
                         <th>Status</th>
                         <th class="text-center">Actions</th>
@@ -322,11 +297,13 @@ require_once '../includes/header.php';
                     <tr>
                         <td class="text-muted"><?php echo $i++; ?></td>
                         <td>
-                            <!-- Avatar + Name -->
                             <div class="d-flex align-items-center gap-2">
                                 <div class="user-avatar"
-                                     style="background:<?php echo $u['role']==='admin'
-                                        ? '#1b4f72' : '#27ae60'; ?>">
+                                     style="background:<?php
+                                        if ($u['role'] === 'admin')        echo '#1b4f72';
+                                        elseif ($u['role'] === 'council')  echo '#8e44ad';
+                                        else                               echo '#27ae60';
+                                     ?>">
                                     <?php echo strtoupper(substr($u['full_name'], 0, 1)); ?>
                                 </div>
                                 <div>
@@ -347,6 +324,10 @@ require_once '../includes/header.php';
                                 <span class="role-badge admin">
                                     <i class="bi bi-shield-fill me-1"></i>Admin
                                 </span>
+                            <?php elseif ($u['role'] === 'council'): ?>
+                                <span class="role-badge council">
+                                    <i class="bi bi-building me-1"></i>Council
+                                </span>
                             <?php else: ?>
                                 <span class="role-badge officer">
                                     <i class="bi bi-person-badge me-1"></i>Officer
@@ -354,7 +335,14 @@ require_once '../includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($u['section_name']): ?>
+                            <?php if ($u['role'] === 'council' && $u['department_name']): ?>
+                                <span class="badge-balance">
+                                    <?php echo clean($u['department_code']); ?>
+                                </span>
+                                <span class="small ms-1">
+                                    <?php echo clean($u['department_name']); ?>
+                                </span>
+                            <?php elseif ($u['section_name']): ?>
                                 <span class="badge-balance">
                                     <?php echo clean($u['dept_code']); ?>
                                 </span>
@@ -362,7 +350,7 @@ require_once '../includes/header.php';
                                     <?php echo clean($u['section_name']); ?>
                                 </span>
                             <?php else: ?>
-                                <span class="text-muted small">— All Sections —</span>
+                                <span class="text-muted small">— System Wide —</span>
                             <?php endif; ?>
                         </td>
                         <td class="text-muted small">
@@ -386,7 +374,8 @@ require_once '../includes/header.php';
                                         '<?php echo addslashes(clean($u['email'])); ?>',
                                         '<?php echo addslashes(clean($u['username'])); ?>',
                                         '<?php echo $u['role']; ?>',
-                                        <?php echo $u['section_id'] ?? 0; ?>,
+                                        <?php echo $u['section_id']    ?? 0; ?>,
+                                        <?php echo $u['department_id'] ?? 0; ?>,
                                         <?php echo $u['is_active']; ?>
                                     )"
                                     title="Edit User">
@@ -401,15 +390,15 @@ require_once '../includes/header.php';
                                 <i class="bi bi-key"></i>
                             </button>
 
-                            <!-- Delete (can't delete yourself) -->
+                            <!-- Delete -->
                             <?php if ($u['id'] != $_SESSION['user_id']): ?>
-                           <form method="POST" style="display:inline;">
+                            <form method="POST" style="display:inline;">
                                 <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id"     value="<?php echo $u['id']; ?>">
                                 <button type="submit"
                                         class="btn btn-sm btn-outline-danger"
-                                        data-confirm="Delete user '<?php echo clean($u['full_name']); ?>'? This cannot be undone."
+                                        onclick="return confirm('Delete <?php echo addslashes(clean($u['full_name'])); ?>? This cannot be undone.')"
                                         title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -449,8 +438,7 @@ require_once '../includes/header.php';
                             <label class="form-label">
                                 Full Name <span class="text-danger">*</span>
                             </label>
-                            <input type="text" name="full_name"
-                                   class="form-control"
+                            <input type="text" name="full_name" class="form-control"
                                    placeholder="e.g. Juan Dela Cruz" required>
                         </div>
 
@@ -458,8 +446,7 @@ require_once '../includes/header.php';
                             <label class="form-label">
                                 Email Address <span class="text-danger">*</span>
                             </label>
-                            <input type="email" name="email"
-                                   class="form-control"
+                            <input type="email" name="email" class="form-control"
                                    placeholder="e.g. juan@lspu.edu.ph" required>
                         </div>
 
@@ -467,8 +454,7 @@ require_once '../includes/header.php';
                             <label class="form-label">
                                 Username <span class="text-danger">*</span>
                             </label>
-                            <input type="text" name="username"
-                                   class="form-control"
+                            <input type="text" name="username" class="form-control"
                                    placeholder="e.g. juan.delacruz" required>
                         </div>
 
@@ -480,8 +466,7 @@ require_once '../includes/header.php';
                                 <input type="password" name="password"
                                        id="addPassword" class="form-control"
                                        placeholder="Min. 8 characters" required>
-                                <button type="button"
-                                        class="btn btn-outline-secondary"
+                                <button type="button" class="btn btn-outline-secondary"
                                         onclick="togglePass('addPassword', 'addEye')">
                                     <i class="bi bi-eye" id="addEye"></i>
                                 </button>
@@ -492,20 +477,20 @@ require_once '../includes/header.php';
                             <label class="form-label">
                                 Role <span class="text-danger">*</span>
                             </label>
-                            <select name="role" id="addRole"
-                                    class="form-select" required
+                            <select name="role" id="addRole" class="form-select" required
                                     onchange="toggleSectionField('add')">
                                 <option value="officer">Class Officer</option>
+                                <option value="council">Council Officer</option>
                                 <option value="admin">Administrator</option>
                             </select>
                         </div>
 
+                        <!-- Section wrapper — shown for Officer -->
                         <div class="col-md-6" id="addSectionWrapper">
                             <label class="form-label">
                                 Assign Section <span class="text-danger">*</span>
                             </label>
-                            <select name="section_id" id="addSectionId"
-                                    class="form-select">
+                            <select name="section_id" class="form-select">
                                 <option value="">— Select Section —</option>
                                 <?php foreach ($sectionList as $sec): ?>
                                     <option value="<?php echo $sec['id']; ?>">
@@ -513,6 +498,22 @@ require_once '../includes/header.php';
                                         — <?php echo clean($sec['year_level_name']); ?>
                                         — <?php echo clean($sec['section_name']); ?>
                                         (<?php echo clean($sec['school_year']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Department wrapper — shown for Council -->
+                        <div class="col-md-6" id="addDeptWrapper" style="display:none;">
+                            <label class="form-label">
+                                Assign Department <span class="text-danger">*</span>
+                            </label>
+                            <select name="department_id" class="form-select">
+                                <option value="">— Select Department —</option>
+                                <?php foreach ($deptList as $d): ?>
+                                    <option value="<?php echo $d['id']; ?>">
+                                        <?php echo clean($d['name']); ?>
+                                        (<?php echo clean($d['code']); ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -546,7 +547,7 @@ require_once '../includes/header.php';
                 <button type="button" class="btn-close btn-close-white"
                         data-bs-dismiss="modal"></button>
             </div>
-           <form method="POST">
+            <form method="POST">
                 <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="id"     id="editId">
@@ -576,10 +577,12 @@ require_once '../includes/header.php';
                             <select name="role" id="editRole" class="form-select"
                                     onchange="toggleSectionField('edit')">
                                 <option value="officer">Class Officer</option>
+                                <option value="council">Council Officer</option>
                                 <option value="admin">Administrator</option>
                             </select>
                         </div>
 
+                        <!-- Section wrapper — shown for Officer -->
                         <div class="col-md-6" id="editSectionWrapper">
                             <label class="form-label">Assigned Section</label>
                             <select name="section_id" id="editSectionId"
@@ -591,6 +594,21 @@ require_once '../includes/header.php';
                                         — <?php echo clean($sec['year_level_name']); ?>
                                         — <?php echo clean($sec['section_name']); ?>
                                         (<?php echo clean($sec['school_year']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Department wrapper — shown for Council -->
+                        <div class="col-md-6" id="editDeptWrapper" style="display:none;">
+                            <label class="form-label">Assigned Department</label>
+                            <select name="department_id" id="editDeptId"
+                                    class="form-select">
+                                <option value="">— Select Department —</option>
+                                <?php foreach ($deptList as $d): ?>
+                                    <option value="<?php echo $d['id']; ?>">
+                                        <?php echo clean($d['name']); ?>
+                                        (<?php echo clean($d['code']); ?>)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -635,15 +653,14 @@ require_once '../includes/header.php';
                         data-bs-dismiss="modal"></button>
             </div>
             <form method="POST">
-                <input type="hidden" name="csrf_token" value="<?php echo csrf_token(); ?>">
-                <input type="hidden" name="action" value="reset_password">
-                <input type="hidden" name="id"     id="resetUserId">
+                <input type="hidden" name="csrf_token"  value="<?php echo csrf_token(); ?>">
+                <input type="hidden" name="action"      value="reset_password">
+                <input type="hidden" name="id"          id="resetUserId">
                 <div class="modal-body lspu-form p-4">
                     <p class="text-muted mb-3">
                         Resetting password for:
                         <strong id="resetUserName" class="text-dark"></strong>
                     </p>
-
                     <div class="mb-3">
                         <label class="form-label">
                             New Password <span class="text-danger">*</span>
@@ -652,14 +669,12 @@ require_once '../includes/header.php';
                             <input type="password" name="new_password"
                                    id="resetPassword" class="form-control"
                                    placeholder="Min. 8 characters" required>
-                            <button type="button"
-                                    class="btn btn-outline-secondary"
+                            <button type="button" class="btn btn-outline-secondary"
                                     onclick="togglePass('resetPassword','resetEye')">
                                 <i class="bi bi-eye" id="resetEye"></i>
                             </button>
                         </div>
                     </div>
-
                     <div class="p-3 rounded"
                          style="background:#fff3cd; border:1px solid #ffc107; font-size:13px;">
                         <i class="bi bi-exclamation-triangle me-1 text-warning"></i>
@@ -684,7 +699,6 @@ require_once '../includes/header.php';
      JAVASCRIPT
      ============================================ -->
 <script>
-// Show/hide password field
 function togglePass(fieldId, iconId) {
     const f = document.getElementById(fieldId);
     const i = document.getElementById(iconId);
@@ -697,22 +711,23 @@ function togglePass(fieldId, iconId) {
     }
 }
 
-// Show or hide the section dropdown based on role
 function toggleSectionField(prefix) {
-    const role    = document.getElementById(prefix + 'Role').value;
-    const wrapper = document.getElementById(prefix + 'SectionWrapper');
-    wrapper.style.display = (role === 'officer') ? '' : 'none';
+    const role        = document.getElementById(prefix + 'Role').value;
+    const secWrapper  = document.getElementById(prefix + 'SectionWrapper');
+    const deptWrapper = document.getElementById(prefix + 'DeptWrapper');
+
+    if (secWrapper)  secWrapper.style.display  = (role === 'officer') ? '' : 'none';
+    if (deptWrapper) deptWrapper.style.display = (role === 'council') ? '' : 'none';
 }
 
-// Run on page load to set correct initial state
+// Set initial state on page load
 toggleSectionField('add');
 
-// Open Edit Modal with user data
-function openEditModal(id, fullName, email, username, role, sectionId, isActive) {
-    document.getElementById('editId').value        = id;
-    document.getElementById('editFullName').value  = fullName;
-    document.getElementById('editEmail').value     = email;
-    document.getElementById('editUsername').value  = username;
+function openEditModal(id, fullName, email, username, role, sectionId, departmentId, isActive) {
+    document.getElementById('editId').value         = id;
+    document.getElementById('editFullName').value   = fullName;
+    document.getElementById('editEmail').value      = email;
+    document.getElementById('editUsername').value   = username;
     document.getElementById('editIsActive').checked = isActive == 1;
 
     // Set role dropdown
@@ -727,15 +742,20 @@ function openEditModal(id, fullName, email, username, role, sectionId, isActive)
         opt.selected = opt.value == sectionId;
     }
 
-    // Show/hide section field
+    // Set department dropdown
+    const deptSelect = document.getElementById('editDeptId');
+    for (let opt of deptSelect.options) {
+        opt.selected = opt.value == departmentId;
+    }
+
+    // Show/hide correct fields based on role
     toggleSectionField('edit');
 
     new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 
-// Open Reset Password Modal
 function openResetModal(id, fullName) {
-    document.getElementById('resetUserId').value = id;
+    document.getElementById('resetUserId').value         = id;
     document.getElementById('resetUserName').textContent = fullName;
     new bootstrap.Modal(document.getElementById('resetModal')).show();
 }
